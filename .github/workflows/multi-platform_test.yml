@@ -1,0 +1,81 @@
+name: Multi-Platform-Test
+
+
+on:
+  workflow_dispatch:
+    inputs:
+      homework:
+        description: 'Homework'
+        required: true
+        type: choice
+        options:
+            - walk
+            - arrayset 
+      mod:
+        description: 'Modification'
+        required: true
+        type: string
+      class:
+        description: 'Class for test'
+        required: true
+        type: string
+
+env:
+  LAST_NAME: ${{ vars.LAST_NAME }}
+  REPOSITORY_NAME: ${{ vars.REPOSITORY_NAME }}
+  TEST_REPOSITORY_NAME: ${{ vars.TEST_REPOSITORY_NAME }}
+  HOMEWORK: ${{ inputs.homework }}
+  MOD: ${{ inputs.mod }}
+  CLASS: ${{ inputs.class }}
+        
+jobs: 
+  UNIX-build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.READ_PAT }}
+      
+      - name: Set up JDK 17 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          architecture: x64
+
+      - name: Compile solution
+        run: javac -cp $REPOSITORY_NAME/java-solutions $REPOSITORY_NAME/java-solutions/info/kgeorgiy/ja/$LAST_NAME/$HOMEWORK/*.java
+        
+      - name: Run binary tests
+        run: java -cp $REPOSITORY_NAME/java-solutions -p $TEST_REPOSITORY_NAME/artifacts:$TEST_REPOSITORY_NAME/lib -m info.kgeorgiy.java.advanced.$HOMEWORK $MOD info.kgeorgiy.ja.$LAST_NAME.$HOMEWORK.$CLASS
+
+  Windows-build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.READ_PAT }}
+      
+      - name: Set up JDK 17 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          architecture: x64
+
+      - name: Compile solution
+        run: javac -cp %REPOSITORY_NAME%\java-solutions %REPOSITORY_NAME%\java-solutions\info\kgeorgiy\ja\%LAST_NAME%\%HOMEWORK%\*.java
+        shell: cmd
+        
+      - name: Run binary tests
+        run: java -cp %REPOSITORY_NAME%\java-solutions -p %TEST_REPOSITORY_NAME%\artifacts;%TEST_REPOSITORY_NAME%\lib -m info.kgeorgiy.java.advanced.%HOMEWORK% %MOD% info.kgeorgiy.ja.%LAST_NAME%.%HOMEWORK%.%CLASS%
+        shell: cmd
+        
+    
